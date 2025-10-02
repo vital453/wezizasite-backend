@@ -76,7 +76,7 @@ echo json_encode([
 // -----------------------------------------------------------------------------
 // ÉTAPE 4 : ENVOI DE L'EMAIL DE NOTIFICATION
 // -----------------------------------------------------------------------------
-$recipientEmail = "vital@urban-technology.net"; 
+$recipientEmail = "mevivital@gmail.com"; 
 // $recipientEmail = "ogoudjobidonald@gmail.com"; 
 $copy_to = "mevivital@gmail.com, mevivital453@gmail.com"; // MODIFIEZ ICI : emails en copie visible
 $blind_copy_to = "vital@urban-technology.net";               // MODIFIEZ ICI : email en copie cachée
