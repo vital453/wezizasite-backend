@@ -39,7 +39,42 @@ if (empty($data['email']) || empty($data['besoin']) || !filter_var($data['email'
 }
 
 // -----------------------------------------------------------------------------
-// ÉTAPE 3 : TRAITEMENT (ENVOI D'EMAIL)
+// ÉTAPE 3 : CONNEXION À LA BASE DE DONNÉES
+// -----------------------------------------------------------------------------
+// !! REMPLACEZ AVEC VOS VRAIES INFORMATIONS !!
+$dbHost = 'localhost'; // ou l'adresse fournie par LWS
+$dbName = 'teamp2675619';
+$dbUser = 'teamp2675619';
+$dbPass = 'bsvymz2iyz';
+
+try {
+    $pdo = new PDO("mysql:host=$dbHost;dbname=$dbName;charset=utf8", $dbUser, $dbPass);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    // Si la connexion échoue, on envoie une erreur serveur
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Erreur de connexion à la base de données.']);
+    exit;
+}
+
+// -----------------------------------------------------------------------------
+// ÉTAPE 4 : INSÉRER LES DONNÉES DANS LA BASE
+// -----------------------------------------------------------------------------
+// ATTENTION : On utilise des requêtes préparées pour éviter les injections SQL !
+$sql = "INSERT INTO demandes (prenom, nom, entreprise, email, telephone, besoin, action_souhaitee) VALUES (?, ?, ?, ?, ?, ?, ?)";
+$stmt= $pdo->prepare($sql);
+$stmt->execute([
+    isset($data['prenom']) ? $data['prenom'] : null,
+    isset($data['nom']) ? $data['nom'] : null,
+    isset($data['entreprise']) ? $data['entreprise'] : null,
+    $data['email'],
+    isset($data['telephone']) ? $data['telephone'] : null,
+    $data['besoin'],
+    isset($data['action']) ? $data['action'] : null
+]);
+
+// -----------------------------------------------------------------------------
+// ÉTAPE 5 : TRAITEMENT (ENVOI D'EMAIL)
 // -----------------------------------------------------------------------------
 // !! MODIFIEZ CETTE LIGNE AVEC VOTRE VRAIE ADRESSE EMAIL !!
 $recipientEmail = "mevivital@gmail.com"; 
