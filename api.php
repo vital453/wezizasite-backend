@@ -117,7 +117,7 @@ $emailBody = "Une nouvelle demande a été soumise depuis le site teamphenix229.
              "Email: " . $email . "\n" .
              "Téléphone: " . $telephone . "\n\n" .
              "Besoin principal:\n" . $besoin . "\n";
-$headers = "From: no-reply@teamphenix229.com\r\n" .
+$headers = "From: contact@teamphenix229.com\r\n" .
            "Reply-To: " . $email . "\r\n" .
            "Content-Type: text/plain; charset=UTF-8\r\n";
 
