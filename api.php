@@ -42,7 +42,7 @@ if (empty($data['email']) || empty($data['besoin']) || !filter_var($data['email'
 // ÉTAPE 3 : TRAITEMENT (ENVOI D'EMAIL)
 // -----------------------------------------------------------------------------
 // !! MODIFIEZ CETTE LIGNE AVEC VOTRE VRAIE ADRESSE EMAIL !!
-$recipientEmail = "VOTRE_ADRESSE_EMAIL@exemple.com"; 
+$recipientEmail = "mevivital@gmail.com"; 
 
 // On nettoie les données pour éviter les injections de code dans les emails
 $prenom = isset($data['prenom']) ? filter_var($data['prenom'], FILTER_SANITIZE_STRING) : 'Non fourni';
