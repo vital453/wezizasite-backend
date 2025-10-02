@@ -40,7 +40,7 @@ if (empty($data['email']) || empty($data['besoin']) || !filter_var($data['email'
 // -----------------------------------------------------------------------------
 // ÉTAPE 3 : CONNEXION ET ENREGISTREMENT DANS LA BASE DE DONNÉES (ACTION CRITIQUE)
 // -----------------------------------------------------------------------------
-$dbHost = 'localhost';
+$dbHost = '91.216.107.161';
 $dbName = 'teamp2675619';
 $dbUser = 'teamp2675619';
 $dbPass = 'bsvymz2iyz';
