@@ -105,7 +105,7 @@ $emailBody = "Une nouvelle demande a été soumise depuis le site teamphenix229.
              "Besoin principal:\n" . $besoin . "\n";
 
 // Construction des en-têtes avec Cc et Bcc
-$headers = "From: no-reply@teamphenix229.com\r\n";
+$headers = "From: contact@teamphenix229.com\r\n";
 $headers .= "Reply-To: " . $email . "\r\n";
 // if (!empty($copy_to)) {
 //     $headers .= "Cc: " . $copy_to . "\r\n";
