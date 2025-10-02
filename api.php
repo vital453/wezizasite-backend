@@ -8,7 +8,7 @@
 // ÉTAPE 1 : CONFIGURATION DE SÉCURITÉ (CORS)
 // -----------------------------------------------------------------------------
 // Autorise le site frontend à communiquer avec ce backend.
-header("Access-Control-Allow-Origin: https://teamphenix229.com"); 
+header("Access-Control-Allow-Origin: https://www.teamphenix229.com"); 
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
