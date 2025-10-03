@@ -1,44 +1,46 @@
 <?php
 /**
  * API pour le formulaire de contact de Team Phénix
- * Version finale optimisée : répond au client dès que la donnée est sauvegardée.
+ * Version finale utilisant PHPMailer avec authentification SMTP pour une fiabilité maximale.
  */
+
+// On importe les classes de la bibliothèque PHPMailer
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+// On charge les fichiers de la bibliothèque qui se trouve dans le dossier 'PHPMailer'
+require 'PHPMailer/Exception.php';
+require 'PHPMailer/PHPMailer.php';
+require 'PHPMailer/SMTP.php';
 
 // -----------------------------------------------------------------------------
 // ÉTAPE 1 : CONFIGURATION DE SÉCURITÉ (CORS)
 // -----------------------------------------------------------------------------
-// Autorise le site frontend à communiquer avec ce backend.
-header("Access-Control-Allow-Origin: https://www.teamphenix229.com"); 
+header("Access-Control-Allow-Origin: https://www.teamphenix229.com");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
-// Le navigateur envoie une requête "preflight" (OPTIONS) pour vérifier les permissions.
-// Il est nécessaire d'y répondre correctement pour que la requête POST puisse suivre.
+// Réponse à la requête "preflight" OPTIONS du navigateur
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
 // -----------------------------------------------------------------------------
-// ÉTAPE 2 : RÉCUPÉRATION ET VALIDATION DES DONNÉES
+// ÉTAPE 2 : RÉCUPÉRATION ET VALIDATION DES DONNÉES DU FORMULAIRE
 // -----------------------------------------------------------------------------
-// On récupère le corps de la requête (qui est en format JSON)
 $inputJSON = file_get_contents('php://input');
 $data = json_decode($inputJSON, true);
 
-// Validation des données : on s'assure que les champs requis sont présents et valides.
 if (empty($data['email']) || empty($data['besoin']) || !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-    http_response_code(400); // 400 Bad Request
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Veuillez fournir une adresse email valide et décrire votre besoin.'
-    ]);
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Veuillez fournir une adresse email valide et décrire votre besoin.']);
     exit;
 }
 
 // -----------------------------------------------------------------------------
-// ÉTAPE 3 : CONNEXION ET ENREGISTREMENT DANS LA BASE DE DONNÉES (ACTION CRITIQUE)
+// ÉTAPE 3 : CONNEXION ET ENREGISTREMENT DANS LA BASE DE DONNÉES
 // -----------------------------------------------------------------------------
 $dbHost = '91.216.107.161';
 $dbName = 'teamp2675619';
@@ -46,15 +48,12 @@ $dbUser = 'teamp2675619';
 $dbPass = 'bsvymz2iyz';
 
 try {
-    // Connexion à la base de données via PDO
     $pdo = new PDO("mysql:host=$dbHost;dbname=$dbName;charset=utf8", $dbUser, $dbPass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Requête préparée pour insérer les données en toute sécurité (prévient les injections SQL)
     $sql = "INSERT INTO demandes (prenom, nom, entreprise, email, telephone, besoin, action_souhaitee) VALUES (?, ?, ?, ?, ?, ?, ?)";
     $stmt = $pdo->prepare($sql);
     
-    // Exécution de la requête avec les données reçues
     $stmt->execute([
         isset($data['prenom']) ? $data['prenom'] : null,
         isset($data['nom']) ? $data['nom'] : null,
@@ -64,71 +63,76 @@ try {
         $data['besoin'],
         isset($data['action']) ? $data['action'] : null
     ]);
-
 } catch (PDOException $e) {
-    // Si la connexion ou l'insertion échoue, c'est une erreur serveur critique.
-    // On peut enregistrer l'erreur technique pour le développeur (invisible pour l'utilisateur).
     error_log("Erreur BDD: " . $e->getMessage());
-    
-    // On envoie une réponse d'erreur générique à l'utilisateur.
-    http_response_code(500); // 500 Internal Server Error
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Une erreur interne est survenue. Impossible d\'enregistrer votre demande.'
-    ]);
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Impossible d\'enregistrer votre demande.']);
     exit;
 }
 
 // -----------------------------------------------------------------------------
-// SUCCÈS : LA DEMANDE EST SAUVEGARDÉE. ON PEUT RÉPONDRE AU CLIENT.
+// ÉTAPE 4 : ENVOI DE L'EMAIL VIA PHPMailer et SMTP
 // -----------------------------------------------------------------------------
-// On envoie la réponse de succès au navigateur de l'utilisateur.
-// L'interface sur le site affichera alors le message de confirmation.
-http_response_code(200); // 200 OK
-echo json_encode([
-    'status' => 'success',
-    'message' => 'Votre demande a bien été reçue. Nous vous recontacterons bientôt.'
-]);
+$mail = new PHPMailer(true);
 
-// Le script continue son exécution sur le serveur pour les tâches secondaires.
+try {
+    // --- Configuration du serveur SMTP de LWS ---
+    // Pour déboguer, décommentez la ligne suivante. Elle affichera TOUTE la conversation avec le serveur SMTP.
+    // $mail->SMTPDebug = 2; 
+    
+    $mail->isSMTP();
+    $mail->Host       = 'mail.teamphenix229.com';      // Serveur SMTP sortant (confirmé par votre capture d'écran)
+    $mail->SMTPAuth   = true;                          // Activer l'authentification SMTP
+    $mail->Username   = 'contact@teamphenix229.com';   // Votre adresse email complète (utilisateur SMTP)
+    $mail->Password   = 'fF3@auCmwgbgwWj';    // !! REMPLACEZ CECI PAR LE VRAI MOT DE PASSE de la boite mail !!
+    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;   // Activer le cryptage SSL
+    $mail->Port       = 465;                         // Port TCP pour SSL
 
-// -----------------------------------------------------------------------------
-// ÉTAPE 4 : ENVOI DE L'EMAIL DE NOTIFICATION (ACTION SECONDAIRE)
-// -----------------------------------------------------------------------------
-$recipientEmail = "mevivital@gmail.com"; 
+    // --- Destinataires ---
+    $mail->setFrom('contact@teamphenix229.com', 'Team Phenix Site Web'); // L'expéditeur (doit être l'adresse authentifiée)
+    $mail->addAddress('vital@urban-technology.net');     // Destinataire principal
+    $mail->addReplyTo($data['email'], ($data['prenom'] ?? '') . ' ' . ($data['nom'] ?? '')); // Pour que "Répondre" aille au client
 
-// On nettoie les données pour l'email (mesure de sécurité)
-$prenom = isset($data['prenom']) ? filter_var($data['prenom'], FILTER_SANITIZE_STRING) : 'Non fourni';
-$nom = isset($data['nom']) ? filter_var($data['nom'], FILTER_SANITIZE_STRING) : '';
-$entreprise = isset($data['entreprise']) ? filter_var($data['entreprise'], FILTER_SANITIZE_STRING) : 'Non fournie';
-$email = filter_var($data['email'], FILTER_SANITIZE_EMAIL);
-$telephone = isset($data['telephone']) ? filter_var($data['telephone'], FILTER_SANITIZE_STRING) : 'Non fourni';
-$besoin = filter_var($data['besoin'], FILTER_SANITIZE_STRING);
-$action = isset($data['action']) ? filter_var($data['action'], FILTER_SANITIZE_STRING) : 'Action non spécifiée';
+    // Ajout des copies
+    $mail->addCC('mevivital@gmail.com');
+    $mail->addCC('mevivital453@gmail.com');
+    $mail->addBCC('vital@urban-technology.net');
 
-// Construction de l'email
-$subject = "Nouvelle demande via le site : " . $prenom . " " . $nom;
-$emailBody = "Une nouvelle demande a été soumise depuis le site teamphenix229.com :\n\n" .
-             "Action souhaitée: " . $action . "\n" .
-             "--------------------------------------------------\n" .
-             "Prénom: " . $prenom . "\n" .
-             "Nom: " . $nom . "\n" .
-             "Entreprise: " . $entreprise . "\n" .
-             "Email: " . $email . "\n" .
-             "Téléphone: " . $telephone . "\n\n" .
-             "Besoin principal:\n" . $besoin . "\n";
-$headers = "From: contact@teamphenix229.com\r\n" .
-           "Reply-To: " . $email . "\r\n" .
-           "Content-Type: text/plain; charset=UTF-8\r\n";
+    // --- Contenu de l'email ---
+    $mail->isHTML(false); // On spécifie que l'email est en format texte brut
+    $mail->CharSet = 'UTF-8'; // Encodage pour bien gérer les accents
 
-// On tente d'envoyer l'email.
-if (!mail($recipientEmail, $subject, $emailBody, $headers)) {
-    // Si l'envoi échoue, on l'enregistre dans les logs du serveur.
-    // L'utilisateur ne verra rien car il a déjà reçu sa réponse de succès.
-    error_log("Alerte: Échec de l'envoi de l'email de notification pour la soumission de " . $email);
+    $subject = "Nouvelle demande via le site : " . ($data['prenom'] ?? '') . " " . ($data['nom'] ?? '');
+    
+    $emailBody = "Une nouvelle demande a été soumise depuis le site teamphenix229.com :\n\n" .
+                 "Action souhaitée: " . ($data['action'] ?? 'N/A') . "\n" .
+                 "--------------------------------------------------\n" .
+                 "Prénom: " . ($data['prenom'] ?? 'N/A') . "\n" .
+                 "Nom: " . ($data['nom'] ?? 'N/A') . "\n" .
+                 "Entreprise: " . ($data['entreprise'] ?? 'N/A') . "\n" .
+                 "Email: " . ($data['email'] ?? 'N/A') . "\n" .
+                 "Téléphone: " . ($data['telephone'] ?? 'N/A') . "\n\n" .
+                 "Besoin principal:\n" . ($data['besoin'] ?? 'N/A') . "\n";
+                 
+    $mail->Subject = $subject;
+    $mail->Body    = $emailBody;
+
+    // Envoi de l'email
+    $mail->send();
+    
+    // Si l'envoi réussit, on renvoie une réponse de succès au frontend
+    http_response_code(200);
+    echo json_encode(['status' => 'success', 'message' => 'Votre demande a bien été envoyée.']);
+
+} catch (Exception $e) {
+    // Si PHPMailer lève une exception (échec de connexion, authentification, etc.)
+    error_log("PHPMailer Error: {$mail->ErrorInfo}"); // On enregistre l'erreur technique dans les logs du serveur
+    
+    // On renvoie une réponse d'erreur détaillée mais compréhensible au frontend
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => "L'envoi a échoué. Erreur technique: {$mail->ErrorInfo}"]);
 }
 
-// Fin du script.
+// Fin du script
 exit();
-
 ?>
