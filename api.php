@@ -96,6 +96,7 @@ try {
     // Ajout des copies
     $mail->addCC('mevivital@gmail.com');
     $mail->addCC('mevivital453@gmail.com');
+    $mail->addCC('ogoudjobidonald@gmail.com');
     $mail->addBCC('vital@urban-technology.net');
 
     // --- Contenu de l'email ---
